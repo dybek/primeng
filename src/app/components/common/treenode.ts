@@ -1,3 +1,5 @@
+import {SearchState} from "./searchstateenum";
+
 export interface TreeNode {
     label?: string;
     data?: any;
@@ -14,4 +16,6 @@ export interface TreeNode {
     draggable?: boolean;
     droppable?: boolean;
     selectable?: boolean;
+    searchState?: SearchState;
 }
+
