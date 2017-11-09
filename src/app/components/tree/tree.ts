@@ -1,8 +1,5 @@
-import {
-  NgModule, Component, Input, AfterContentInit, OnDestroy, Output, EventEmitter, OnInit, EmbeddedViewRef,
-  ViewContainerRef,
-  ContentChildren, QueryList, TemplateRef, Inject, forwardRef, Host, Renderer2, AfterViewInit
-} from '@angular/core';
+import {NgModule,Component,Input,AfterContentInit,OnDestroy,Output,EventEmitter,OnInit,EmbeddedViewRef,ViewContainerRef,
+  ContentChildren,QueryList,TemplateRef,Inject,forwardRef,Host,Renderer2,AfterViewInit} from '@angular/core';
 import {Optional} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TreeNode} from '../common/treenode';
@@ -463,7 +460,19 @@ export class Tree implements OnInit,AfterViewInit,AfterContentInit,OnDestroy {
     }
 
     clearSearchState(){
+      this.forEach((treeNode) => treeNode.searchState = null);
+    }
 
+    forEach(callback: (treeNode: TreeNode) => any) {
+      let forEach = (nodes: TreeNode[], callback: (treeNode: TreeNode) => any) => {
+        nodes.forEach((treeNode: TreeNode) => {
+          callback.apply(this, treeNode);
+          if (treeNode.children) {
+            forEach(treeNode.children, callback);
+          }
+        });
+      };
+      forEach(this.value, callback);
     }
 
     get horizontal(): boolean {
