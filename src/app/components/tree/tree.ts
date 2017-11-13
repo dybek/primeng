@@ -7,6 +7,7 @@ import {SharedModule} from '../common/shared';
 import {PrimeTemplate} from '../common/shared';
 import {TreeDragDropService} from '../common/treedragdropservice';
 import {Subscription}   from 'rxjs/Subscription';
+import {SearchState} from '../common/searchstateenum';
 
 @Component({
     selector: 'p-treeNodeTemplateLoader',
@@ -39,7 +40,7 @@ export class TreeNodeTemplateLoader implements OnInit, OnDestroy {
         <ng-template [ngIf]="node">
             <li *ngIf="tree.droppableNodes" class="ui-treenode-droppoint" [ngClass]="{'ui-treenode-droppoint-active ui-state-highlight':draghoverPrev}"
             (drop)="onDropPoint($event,-1)" (dragover)="onDropPointDragOver($event)" (dragenter)="onDropPointDragEnter($event,-1)" (dragleave)="onDropPointDragLeave($event)"></li>
-            <li *ngIf="!tree.horizontal" [ngClass]="['ui-treenode',node.styleClass||'', isLeaf() ? 'ui-treenode-leaf': '']">
+            <li *ngIf="!tree.horizontal" [ngClass]="['ui-treenode',node.styleClass||'', isLeaf() ? 'ui-treenode-leaf': '', searchClass() ]">
                 <div class="ui-treenode-content" (click)="onNodeClick($event)" (contextmenu)="onNodeRightClick($event)" (touchend)="onNodeTouchEnd()"
                     (drop)="onDropNode($event)" (dragover)="onDropNodeDragOver($event)" (dragenter)="onDropNodeDragEnter($event)" (dragleave)="onDropNodeDragLeave($event)"
                     [ngClass]="{'ui-treenode-selectable':tree.selectionMode && node.selectable !== false,'ui-treenode-dragover':draghoverNode, 'ui-treenode-content-selected':isSelected()}" [draggable]="tree.draggableNodes" (dragstart)="onDragStart($event)" (dragend)="onDragStop($event)">
@@ -132,6 +133,24 @@ export class UITreeNode implements OnInit {
 
     ngOnInit() {
         this.node.parent = this.parentNode;
+    }
+
+    searchClass(): string {
+      let searchClass: string;
+      switch (this.node.searchState) {
+        case SearchState.FOUND:
+          searchClass = 'ui-treenode-filter-found';
+          break;
+        case SearchState.ON_FOUND_PATH:
+          searchClass = 'ui-treenode-filter-on-path';
+          break;
+        case SearchState.NOT_FOUND:
+          searchClass = 'ui-treenode-filter-not-found';
+          break;
+        default:
+          searchClass = '';
+      }
+      return searchClass;
     }
 
     getIcon() {
@@ -456,23 +475,26 @@ export class Tree implements OnInit,AfterViewInit,AfterContentInit,OnDestroy {
     }
 
     filterTree() {
-      console.log(this.filter.value);
+      this.clearSearchState();
+      this.forAll((treeNode) => treeNode.searchState = SearchState.FOUND);
     }
 
     clearSearchState(){
-      this.forEach((treeNode) => treeNode.searchState = null);
+      this.forAll((treeNode: TreeNode) => {
+        treeNode.searchState = null
+      });
     }
 
-    forEach(callback: (treeNode: TreeNode) => any) {
-      let forEach = (nodes: TreeNode[], callback: (treeNode: TreeNode) => any) => {
+    forAll(doForEach: (treeNode: TreeNode) => any) {
+      let forEach = (nodes: TreeNode[], doForEach: (treeNode: TreeNode)=> any) => {
         nodes.forEach((treeNode: TreeNode) => {
-          callback.apply(this, treeNode);
+          doForEach.call(this, treeNode);
           if (treeNode.children) {
-            forEach(treeNode.children, callback);
+            forEach(treeNode.children, doForEach);
           }
         });
       };
-      forEach(this.value, callback);
+      forEach(this.value, doForEach);
     }
 
     get horizontal(): boolean {

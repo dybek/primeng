@@ -385,6 +385,11 @@
             }
         }
     }
+  .ui.treenode{
+    &.ui-treenode-filter-found{
+      color:red;
+    }
+  }
 }
 
 .ui-treetable {
