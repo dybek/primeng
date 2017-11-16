@@ -461,41 +461,70 @@ export class Tree implements OnInit,AfterViewInit,AfterContentInit,OnDestroy {
     }
 
     ngAfterViewInit() {
-      if(this.filter) {
-        this.filterFunction = this.renderer.listen(this.filter, 'keyup', () => {
-          if (this.filterTimeout) {
-            clearTimeout(this.filterTimeout);
-          }
-          this.filterTimeout = setTimeout(() => {
-            this.filterTree();
-            this.filterTimeout = null;
-          }, this.filterDelay);
-        });
-      }
+        if (this.filter) {
+            this.filterFunction = this.renderer.listen(this.filter, 'keyup', () => {
+                if (this.filterTimeout) {
+                    clearTimeout(this.filterTimeout);
+                }
+                this.filterTimeout = setTimeout(() => {
+                    this.filterTree();
+                    this.filterTimeout = null;
+                }, this.filterDelay);
+            });
+        }
     }
 
     filterTree() {
-      this.clearSearchState();
-      this.forAll((treeNode) => treeNode.searchState = SearchState.FOUND);
+        const filterValue = this.filter.value;
+        if(!filterValue.trim()){
+            this.clearSearchState();
+            return;
+        }
+
+        let searchNode = (node: TreeNode): boolean => {
+            let expandUp = false;
+            let index = node.label.indexOf(filterValue);
+            if (index >= 0) {
+                node.searchState = SearchState.FOUND;
+                expandUp = true;
+            }else{
+                node.searchState = SearchState.NOT_FOUND;
+                expandUp = false;
+            }
+
+            if (node.children) {
+                const childState = node.children.map(searchNode).find((childState: boolean) => childState);
+                if (childState) {
+                    if(node.searchState != SearchState.FOUND) node.searchState = SearchState.ON_FOUND_PATH;
+                    node.expanded = true;
+                    expandUp = true;
+                }
+            }
+            return expandUp;
+        };
+
+        if(this.value) this.value.forEach(searchNode);
     }
 
-    clearSearchState(){
-      this.forAll((treeNode: TreeNode) => {
-        treeNode.searchState = null
-      });
+    clearSearchState() {
+        this.forAll((treeNode: TreeNode) => {
+            treeNode.searchState = null;
+        });
     }
 
     forAll(doForEach: (treeNode: TreeNode) => any) {
-      let forEach = (nodes: TreeNode[], doForEach: (treeNode: TreeNode)=> any) => {
-        nodes.forEach((treeNode: TreeNode) => {
-          doForEach.call(this, treeNode);
-          if (treeNode.children) {
-            forEach(treeNode.children, doForEach);
-          }
-        });
-      };
-      forEach(this.value, doForEach);
+        this.forEach(this.value, doForEach);
     }
+
+    private forEach(nodes: TreeNode[], doForEach: (treeNode: TreeNode) => any) {
+        nodes.forEach((treeNode: TreeNode) => {
+            Promise.resolve(doForEach(treeNode)).then(() => {
+                if (treeNode.children) {
+                    this.forEach(treeNode.children, doForEach);
+                }
+            });
+        });
+    };
 
     get horizontal(): boolean {
         return this.layout == 'horizontal';

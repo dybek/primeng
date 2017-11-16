@@ -385,11 +385,21 @@
             }
         }
     }
-  .ui.treenode{
-    &.ui-treenode-filter-found{
-      color:red;
+    .ui-treenode{
+        &.ui-treenode-filter-found{
+            >.ui-treenode-content {
+                font-weight: bold;
+            }
+        }
+        &.ui-treenode-filter-on-path{
+            >.ui-treenode-content {
+                opacity:0.5;
+            }
+        }
+        &.ui-treenode-filter-not-found{
+            display: none;
+        }
     }
-  }
 }
 
 .ui-treetable {
